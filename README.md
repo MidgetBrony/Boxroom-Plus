@@ -97,9 +97,9 @@ steam_cache_v2/
 
 ```json
 {
-  "Executable": "C:\\Users\\Rusty\\Downloads\\Mesen_2.2.0_Windows\\Mesen.exe",
-  "Arguments": "\"C:\\Users\\Rusty\\Downloads\\Mesen_2.2.0_Windows\\Super Mario Bros. (World).zip\"",
-  "WorkingDirectory": "C:\\Users\\Rusty\\Downloads\\Mesen_2.2.0_Windows",
+  "Executable": "C:\\Users\\USER\\DOCUMENTS\\Mesen_2.2.0_Windows\\Mesen.exe",
+  "Arguments": "\"C:\\Users\\USER\\DOCUMENTS\\Mesen_2.2.0_Windows\\Super Mario Bros. (World).zip\"",
+  "WorkingDirectory": "C:\\Users\\USER\\DOCUMENTS\\Mesen_2.2.0_Windows",
   "UseShellExecute": true
 }
 ```
