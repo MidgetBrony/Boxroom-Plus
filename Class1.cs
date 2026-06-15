@@ -29,7 +29,7 @@ namespace BoxroomPlus
         public bool? UseShellExecute { get; set; }
     }
 
-    [HarmonyPatch("LaunchGame")]
+    [HarmonyPatch(typeof(BoxInspector), "LaunchGame")]
     class LaunchPatch
     {
         static bool Prefix(BoxInspector __instance)
