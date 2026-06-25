@@ -1,10 +1,17 @@
 ﻿using HarmonyLib;
 using MelonLoader;
 using Newtonsoft.Json;
+using SteamShelf;
+using SteamShelf.Placeables;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Threading.Tasks;
 using UnityEngine;
+
 
 [assembly: MelonInfo(typeof(BoxroomPlus.ModMain), "Boxroom Plus", "1.0", "MidgetBrony")]
 [assembly: MelonGame("NestedLoop", "BOXROOM")]
