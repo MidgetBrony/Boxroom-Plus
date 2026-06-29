@@ -25,6 +25,33 @@ namespace BoxroomPlus
             MelonLogger.Msg("Boxroom Plus Loaded!");
 
             HarmonyInstance.PatchAll();
+
+            var type = AccessTools.TypeByName("SteamShelf.SteamGameCache");
+
+            MelonLogger.Msg(type?.FullName ?? "NULL");
+        }
+
+        static MethodBase TargetMethod()
+        {
+            var type = AccessTools.TypeByName("SteamGameCache");
+
+            if (type == null)
+            {
+                MelonLogger.Error("SteamGameCache type not found!");
+                return null;
+            }
+
+            var method = AccessTools.Method(type, "InvalidateGame");
+
+            if (method == null)
+            {
+                MelonLogger.Error("InvalidateGame method not found!");
+                return null;
+            }
+
+            MelonLogger.Msg("Patching SteamGameCache.InvalidateGame");
+
+            return method;
         }
     }
 
@@ -34,6 +61,86 @@ namespace BoxroomPlus
         public string Arguments { get; set; }
         public string WorkingDirectory { get; set; }
         public bool? UseShellExecute { get; set; }
+    }
+
+    [HarmonyPatch]
+    internal class InvalidateGamePatch
+    {
+        static MethodBase TargetMethod()
+        {
+            var type = AccessTools.TypeByName("SteamGameCache");
+
+            if (type == null)
+            {
+                MelonLogger.Error("SteamGameCache not found!");
+                return null;
+            }
+
+            var method = AccessTools.Method(type, "InvalidateGame");
+
+            if (method == null)
+            {
+                MelonLogger.Error("InvalidateGame not found!");
+                return null;
+            }
+
+            MelonLogger.Msg("Patching SteamGameCache.InvalidateGame");
+
+            return method;
+        }
+
+        static bool Prefix(int appId)
+        {
+            MelonLogger.Msg($"InvalidateGame called: {appId}");
+
+            if (CustomIds.IsCustom(appId))
+            {
+                MelonLogger.Msg($"Skipping cache invalidation for {appId}");
+                return false;
+            }
+
+            return true;
+        }
+    }
+
+    [HarmonyPatch]
+    internal class InvalidateGameMetaPatch
+    {
+        static MethodBase TargetMethod()
+        {
+            var type = AccessTools.TypeByName("SteamGameCache");
+
+            if (type == null)
+            {
+                MelonLogger.Error("SteamGameCache type not found!");
+                return null;
+            }
+
+            var method = AccessTools.Method(type, "InvalidateGameMeta");
+
+            if (method == null)
+            {
+                MelonLogger.Error("InvalidateGameMeta method not found!");
+                return null;
+            }
+
+            MelonLogger.Msg("Patching SteamGameCache.InvalidateGameMeta");
+
+            return method;
+        }
+
+        static bool Prefix(int appId)
+        {
+            MelonLogger.Msg($"InvalidateGameMeta called: {appId}");
+
+            if (CustomIds.IsCustom(appId))
+            {
+                MelonLogger.Msg($"Skipping meta invalidation for custom game {appId}");
+                return false;
+            }
+
+            return true;
+        }
     }
 
     [HarmonyPatch(typeof(BoxInspector), "LaunchGame")]
