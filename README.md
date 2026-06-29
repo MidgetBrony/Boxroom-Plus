@@ -163,6 +163,24 @@ BOXROOM -> Custom Executable
 
 Existing Steam titles continue working exactly as before.
 
+## Companion Application
+
+**Boxroom Studio** is available for users who prefer a graphical interface for creating and managing custom games.
+
+With Boxroom Studio you can:
+
+* Create custom games
+* Import game metadata from IGDB
+* Download cover artwork from SteamGridDB
+* Download screenshots
+* Generate and edit `launch.json`
+* Synchronize custom games with `owned_games.json`
+
+If you're creating more than a few custom games, Boxroom Studio is the recommended way to manage your library.
+
+**GitHub:** https://github.com/MidgetBrony/Boxroom-Studio
+
+
 ---
 
 # License
