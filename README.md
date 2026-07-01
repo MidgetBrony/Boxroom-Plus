@@ -47,6 +47,37 @@ BOXROOM/
 
 ---
 
+
+---
+
+## Linux
+
+Boxroom-Plus works under Proton, however there is one important limitation.
+
+When BOXROOM is running through Proton, launching native Linux executables
+directly may not work. Proton correctly forwards Steam launch requests, but
+does not always propagate arbitrary native Linux process launches.
+
+### Workaround
+
+If you wish to launch a native Linux application (such as RetroArch,
+Heroic, Lutris, or a custom script), the recommended approach is:
+
+1. Add the application to Steam as a **Non-Steam Game**.
+2. Create a desktop shortcut from Steam.
+3. Open the generated `.desktop` file in a text editor.
+4. Copy the generated launch command into `launch.json`.
+
+Steam will then handle launching the application through its normal Linux
+launch mechanism.
+
+This limitation only affects native Linux applications launched while
+BOXROOM is running under Proton.
+
+Windows executables and normal Steam games continue to work as expected.
+
+---
+
 ## Installing Boxroom-Plus
 
 Copy:
