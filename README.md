@@ -1,187 +1,240 @@
-# Boxroom-Plus
+# Boxroom Plus
 
-Adds support for launching custom applications, emulators, and non-Steam games directly from BOXROOM.
+**Version 1.2.1**
 
-Instead of always launching through Steam, Boxroom-Plus checks for a `launch.json` file inside a game's cache folder. If found, the specified executable is launched with optional arguments and working directory settings.
+Boxroom Plus extends **BOXROOM** with support for custom applications,
+emulators, and non-Steam games while protecting custom entries from
+Steam cache refreshes.
 
-If no `launch.json` exists, BOXROOM behaves normally and launches through Steam.
+Unlike vanilla BOXROOM, Boxroom Plus allows custom AppIDs to behave like
+native Steam titles inside your library.
 
----
+------------------------------------------------------------------------
 
-## Features
+# Features
 
-- Launch custom executables
-- Launch emulators with ROM arguments
-- Launch non-Steam games
-- Per-game launcher configuration
-- Automatic fallback to normal Steam launching
-- No changes required to existing Steam games
+-   Launch custom executables using `launch.json`
+-   Launch emulators with ROM arguments
+-   Launch non-Steam games
+-   Treat custom AppIDs as owned by Steam
+-   Prevent custom games from being removed during cache refreshes
+-   Prevent metadata invalidation for custom games
+-   Automatic fallback to Steam launching
+-   Fully compatible with existing Steam titles
 
----
+------------------------------------------------------------------------
 
-## Requirements
+# Requirements
 
-- BOXROOM
-- MelonLoader
-- .NET Framework compatible with BOXROOM
+-   BOXROOM
+-   MelonLoader
+-   .NET Framework compatible with BOXROOM
 
----
+------------------------------------------------------------------------
 
-## Installing MelonLoader
+# Installing MelonLoader
 
-1. Download MelonLoader from https://melonwiki.xyz
-2. Run the MelonLoader installer.
-3. Select BOXROOM.exe.
-4. Install the latest stable version.
-5. Launch BOXROOM once.
-6. Verify the following folders were created:
+1.  Download MelonLoader from https://melonwiki.xyz
+2.  Run the installer.
+3.  Select `BOXROOM.exe`.
+4.  Install the latest stable version.
+5.  Launch BOXROOM once.
+6.  Verify the following folders exist:
 
-```text
+``` text
 BOXROOM/
 ├── Mods/
 ├── UserData/
-├── MelonLoader/
+└── MelonLoader/
 ```
 
-7. Close BOXROOM.
+7.  Close BOXROOM.
 
----
+------------------------------------------------------------------------
 
-## Installing Boxroom-Plus
+# Installing Boxroom Plus
 
 Copy:
 
-```text
+``` text
 BoxroomPlus.dll
 ```
 
-to:
+into:
 
-```text
+``` text
 BOXROOM/Mods/
 ```
 
 Launch BOXROOM.
 
-You should see:
+If installed correctly you should see:
 
-```text
+``` text
 Boxroom Plus Loaded!
 ```
 
-in the MelonLoader console.
+inside the MelonLoader console.
 
----
+------------------------------------------------------------------------
 
-## launch.json
+# How It Works
 
-Place a `launch.json` file inside the game's cache directory:
+## Steam Games
 
-```text
+``` text
+BOXROOM
+    │
+    ▼
+Steam Launch
+```
+
+## Custom Games
+
+``` text
+BOXROOM
+    │
+    ▼
+launch.json Found?
+    │
+ ┌──┴─────┐
+ │ Yes    │ No
+ ▼        ▼
+Launch    Steam
+Executable Launch
+```
+
+------------------------------------------------------------------------
+
+# Custom AppIDs
+
+Boxroom Plus patches BOXROOM's ownership validation so custom AppIDs are
+treated as owned.
+
+This allows custom games to appear and launch normally without requiring
+a Steam license for the custom AppID.
+
+Steam games continue using Steam's normal ownership validation.
+
+------------------------------------------------------------------------
+
+# Cache Protection
+
+During Steam cache refreshes BOXROOM may invalidate cached metadata.
+
+Boxroom Plus skips invalidation for custom AppIDs, protecting:
+
+-   Custom metadata
+-   Custom launch configurations
+-   Imported custom games
+
+This prevents custom entries from being removed during refresh
+operations.
+
+------------------------------------------------------------------------
+
+# launch.json
+
+Place a `launch.json` file inside:
+
+``` text
 AppData\LocalLow\NestedLoop\BOXROOM\steam_cache_v2\<AppId>\
 ```
 
 Example:
 
-```text
+``` text
 steam_cache_v2/
 └── 900000001/
     ├── game.json
-    ├── screenshots
+    ├── screenshots/
     └── launch.json
 ```
 
----
+------------------------------------------------------------------------
 
-## Example: Launching Mesen
+# Example
 
-```json
+``` json
 {
-  "Executable": "C:\\Users\\USER\\DOCUMENTS\\Mesen_2.2.0_Windows\\Mesen.exe",
-  "Arguments": "\"C:\\Users\\USER\\DOCUMENTS\\Mesen_2.2.0_Windows\\Super Mario Bros. (World).zip\"",
-  "WorkingDirectory": "C:\\Users\\USER\\DOCUMENTS\\Mesen_2.2.0_Windows",
+  "Executable": "C:\\Games\\Minecraft\\MinecraftLauncher.exe",
+  "Arguments": "",
+  "WorkingDirectory": "C:\\Games\\Minecraft",
   "UseShellExecute": true
 }
 ```
 
----
+------------------------------------------------------------------------
 
-## launch.json Fields
+# launch.json Fields
 
-### Executable
+## Executable
 
 Required path to the executable.
 
-### Arguments
+## Arguments
 
-Optional command line arguments.
+Optional command-line arguments.
 
-### WorkingDirectory
+## WorkingDirectory
 
-Optional working directory. If omitted, Boxroom-Plus automatically uses the executable's folder.
+Optional working directory.
 
-### UseShellExecute
+If omitted, Boxroom Plus automatically uses the executable's directory.
 
-Optional. Defaults to `true`.
+## UseShellExecute
 
----
+Optional.
 
-## Example: RetroArch
+Defaults to `true`.
 
-```json
-{
-  "Executable": "C:\\RetroArch\\retroarch.exe",
-  "Arguments": "-L \"C:\\RetroArch\\cores\\snes9x_libretro.dll\" \"D:\\ROMS\\Super Mario World.smc\""
-}
-```
+------------------------------------------------------------------------
 
----
+# Linux / Steam Deck
 
-## Example: Non-Steam Game
+Boxroom Plus works under Proton.
 
-```json
-{
-  "Executable": "C:\\Games\\Minecraft\\MinecraftLauncher.exe"
-}
-```
+Steam launch requests function normally, however launching native Linux
+executables directly from Proton may not always work.
 
----
+## Recommended Workaround
 
-## Fallback Behavior
+1.  Add the Linux application as a **Non-Steam Game**.
+2.  Create a desktop shortcut from Steam.
+3.  Open the generated `.desktop` file.
+4.  Copy the generated launch command into `launch.json`.
 
-If `launch.json` is missing:
+Steam will then handle launching the application correctly.
 
-```text
-BOXROOM -> Steam Launch
-```
+------------------------------------------------------------------------
 
-If `launch.json` exists:
+# Companion Application
 
-```text
-BOXROOM -> Custom Executable
-```
+## Boxroom Studio
 
-Existing Steam titles continue working exactly as before.
+Boxroom Studio provides a graphical interface for managing custom games.
 
-## Companion Application
+Features include:
 
-**Boxroom Studio** is available for users who prefer a graphical interface for creating and managing custom games.
+-   Create custom games
+-   Import metadata
+-   Download SteamGridDB artwork
+-   Download screenshots
+-   Generate and edit `launch.json`
+-   Manage custom metadata
 
-With Boxroom Studio you can:
+GitHub:
 
-* Create custom games
-* Import game metadata from IGDB
-* Download cover artwork from SteamGridDB
-* Download screenshots
-* Generate and edit `launch.json`
-* Synchronize custom games with `owned_games.json`
+https://github.com/MidgetBrony/Boxroom-Studio
 
-If you're creating more than a few custom games, Boxroom Studio is the recommended way to manage your library.
+------------------------------------------------------------------------
 
-**GitHub:** https://github.com/MidgetBrony/Boxroom-Studio
+# Planned
 
+-   Improved Boxroom Studio integration
+-	Additional Linux Patches
 
----
+------------------------------------------------------------------------
 
 # License
 
