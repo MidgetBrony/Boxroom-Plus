@@ -40,6 +40,10 @@
     <Reference Include="Assembly-CSharp">
       <HintPath>D:\SteamLibrary\steamapps\common\My Game Room\BOXROOM_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
+    <Reference Include="Facepunch.Steamworks.Win64, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>D:\SteamLibrary\steamapps\common\My Game Room\BOXROOM_Data\Managed\Facepunch.Steamworks.Win64.dll</HintPath>
+    </Reference>
     <Reference Include="MelonLoader">
       <HintPath>D:\SteamLibrary\steamapps\common\My Game Room\MelonLoader\net35\MelonLoader.dll</HintPath>
     </Reference>
