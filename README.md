@@ -1,13 +1,14 @@
 # Boxroom Plus
 
-**Version 1.2.1**
+**Version 1.3.0**
 
 Boxroom Plus extends **BOXROOM** with support for custom applications,
-emulators, and non-Steam games while protecting custom entries from
-Steam cache refreshes.
+emulators, non-Steam games, and custom case appearance while protecting
+custom entries from Steam cache refreshes.
 
 Unlike vanilla BOXROOM, Boxroom Plus allows custom AppIDs to behave like
-native Steam titles inside your library.
+native Steam titles inside your library while adding additional metadata
+used for custom platforms and visual customization.
 
 ------------------------------------------------------------------------
 
@@ -20,6 +21,9 @@ native Steam titles inside your library.
 -   Prevent custom games from being removed during cache refreshes
 -   Prevent metadata invalidation for custom games
 -   Automatic fallback to Steam launching
+-   Custom platform metadata
+-   Automatic platform-specific case colors
+-   User-defined custom case colors
 -   Fully compatible with existing Steam titles
 
 ------------------------------------------------------------------------
@@ -34,21 +38,21 @@ native Steam titles inside your library.
 
 # Installing MelonLoader
 
-1.  Download MelonLoader from https://melonwiki.xyz
-2.  Run the installer.
-3.  Select `BOXROOM.exe`.
-4.  Install the latest stable version.
-5.  Launch BOXROOM once.
-6.  Verify the following folders exist:
+1. Download MelonLoader from https://melonwiki.xyz
+2. Run the installer.
+3. Select `BOXROOM.exe`.
+4. Install the latest stable version.
+5. Launch BOXROOM once.
+6. Verify the following folders exist:
 
-``` text
+```text
 BOXROOM/
 ├── Mods/
 ├── UserData/
 └── MelonLoader/
 ```
 
-7.  Close BOXROOM.
+7. Close BOXROOM.
 
 ------------------------------------------------------------------------
 
@@ -56,13 +60,13 @@ BOXROOM/
 
 Copy:
 
-``` text
+```text
 BoxroomPlus.dll
 ```
 
 into:
 
-``` text
+```text
 BOXROOM/Mods/
 ```
 
@@ -70,7 +74,7 @@ Launch BOXROOM.
 
 If installed correctly you should see:
 
-``` text
+```text
 Boxroom Plus Loaded!
 ```
 
@@ -82,7 +86,7 @@ inside the MelonLoader console.
 
 ## Steam Games
 
-``` text
+```text
 BOXROOM
     │
     ▼
@@ -91,7 +95,7 @@ Steam Launch
 
 ## Custom Games
 
-``` text
+```text
 BOXROOM
     │
     ▼
@@ -125,6 +129,7 @@ During Steam cache refreshes BOXROOM may invalidate cached metadata.
 Boxroom Plus skips invalidation for custom AppIDs, protecting:
 
 -   Custom metadata
+-   Custom helper metadata
 -   Custom launch configurations
 -   Imported custom games
 
@@ -133,17 +138,61 @@ operations.
 
 ------------------------------------------------------------------------
 
+# Custom Metadata
+
+Boxroom Plus supports an optional helper file:
+
+```text
+meta.helper.json
+```
+
+located alongside a game's metadata.
+
+Example:
+
+```text
+steam_cache_v2/
+└── 900000001/
+    ├── game.json
+    ├── meta.helper.json
+    ├── screenshots/
+    └── launch.json
+```
+
+Example:
+
+```json
+{
+  "Type": "Custom",
+  "Platform": "gog",
+  "CaseColor": "#FFD700"
+}
+```
+
+## Supported Fields
+
+| Field | Description |
+|------|-------------|
+| Type | Optional application type. |
+| Platform | Platform identifier used for automatic case colors. |
+| CaseColor | Optional HTML color overriding the platform default. |
+
+If `CaseColor` is omitted, Boxroom Plus will automatically use the
+default color associated with the selected platform.
+
+------------------------------------------------------------------------
+
 # launch.json
 
 Place a `launch.json` file inside:
 
-``` text
+```text
 AppData\LocalLow\NestedLoop\BOXROOM\steam_cache_v2\<AppId>\
 ```
 
 Example:
 
-``` text
+```text
 steam_cache_v2/
 └── 900000001/
     ├── game.json
@@ -155,7 +204,7 @@ steam_cache_v2/
 
 # Example
 
-``` json
+```json
 {
   "Executable": "C:\\Games\\Minecraft\\MinecraftLauncher.exe",
   "Arguments": "",
@@ -199,10 +248,10 @@ executables directly from Proton may not always work.
 
 ## Recommended Workaround
 
-1.  Add the Linux application as a **Non-Steam Game**.
-2.  Create a desktop shortcut from Steam.
-3.  Open the generated `.desktop` file.
-4.  Copy the generated launch command into `launch.json`.
+1. Add the Linux application as a **Non-Steam Game**.
+2. Create a desktop shortcut from Steam.
+3. Open the generated `.desktop` file.
+4. Copy the generated launch command into `launch.json`.
 
 Steam will then handle launching the application correctly.
 
@@ -221,7 +270,9 @@ Features include:
 -   Download SteamGridDB artwork
 -   Download screenshots
 -   Generate and edit `launch.json`
--   Manage custom metadata
+-   Configure platforms
+-   Configure custom case colors
+-   Manage helper metadata
 
 GitHub:
 
@@ -231,8 +282,9 @@ https://github.com/MidgetBrony/Boxroom-Studio
 
 # Planned
 
--   Improved Boxroom Studio integration
--	Additional Linux Patches
+-   Additional platform integrations
+-   Expanded metadata support
+-   Additional Linux improvements
 
 ------------------------------------------------------------------------
 
