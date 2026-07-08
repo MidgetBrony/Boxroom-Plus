@@ -22,6 +22,8 @@ namespace Boxroom_Plus
     {
         private const string CacheRootV2 = "steam_cache_v2";
         private const string HelperFile = "meta.helper.json";
+        private static readonly Dictionary<Material, Color> OriginalColors =
+    new Dictionary<Material, Color>();
 
         private static readonly Dictionary<int, HelperMeta> Helpers =
             new Dictionary<int, HelperMeta>();
@@ -76,6 +78,9 @@ namespace Boxroom_Plus
                 if (renderer == null)
                     return;
 
+                // Always restore the original BOXROOM material first.
+                ApplyColorToRenderer(renderer);
+
                 HelperMeta helper = Get(appId);
 
                 if (helper == null)
@@ -84,30 +89,27 @@ namespace Boxroom_Plus
                 string colorHex = helper.CaseColor;
 
                 if (string.IsNullOrWhiteSpace(colorHex) &&
-                    !string.IsNullOrWhiteSpace(helper.Platform))
+                    !string.IsNullOrWhiteSpace(helper.Platform) &&
+                    !helper.Platform.Equals("steam", StringComparison.OrdinalIgnoreCase))
                 {
-                    string platformColor;
-
-                    if (PlatformColors.TryGetValue(helper.Platform, out platformColor))
-                        colorHex = platformColor;
+                    PlatformColors.TryGetValue(helper.Platform, out colorHex);
                 }
 
                 if (string.IsNullOrWhiteSpace(colorHex))
                     return;
 
-                Color color;
-
-                if (!ColorUtility.TryParseHtmlString(colorHex, out color))
+                if (!ColorUtility.TryParseHtmlString(colorHex, out Color color))
                 {
-                    MelonLogger.Warning("[Boxroom Plus] Invalid CaseColor '" + colorHex + "' for AppID " + appId);
+                    MelonLogger.Warning($"[Boxroom Plus] Invalid CaseColor '{colorHex}' for AppID {appId}");
                     return;
                 }
 
                 ApplyColorToRenderer(renderer, color);
+
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning("[Boxroom Plus] ApplyCaseColor failed for AppID " + appId + ": " + ex);
+                MelonLogger.Warning($"[Boxroom Plus] ApplyCaseColor failed for AppID {appId}: {ex}");
             }
         }
 
@@ -145,20 +147,42 @@ namespace Boxroom_Plus
             return Path.Combine(root, appId.ToString(), HelperFile);
         }
 
-        private static void ApplyColorToRenderer(Renderer renderer, Color color)
+        private static void ApplyColorToRenderer(Renderer renderer, Color? overrideColor = null)
         {
             Material mat = renderer.material;
 
             if (mat == null)
                 return;
 
-            // Built-in/Standard style shader.
-            if (mat.HasProperty("_Color"))
-                mat.color = color;
+            // Cache the original BOXROOM color the first time we see this material.
+            if (!OriginalColors.ContainsKey(mat))
+            {
+                if (mat.HasProperty("_Color"))
+                    OriginalColors[mat] = mat.color;
+                else if (mat.HasProperty("_BaseColor"))
+                    OriginalColors[mat] = mat.GetColor("_BaseColor");
+                else
+                    OriginalColors[mat] = Color.white;
+            }
 
-            // URP/HDRP style shader.
+            // Always restore the original BOXROOM color first.
+            Color original = OriginalColors[mat];
+
+            if (mat.HasProperty("_Color"))
+                mat.color = original;
+
             if (mat.HasProperty("_BaseColor"))
-                mat.SetColor("_BaseColor", color);
+                mat.SetColor("_BaseColor", original);
+
+            // No override? We're done.
+            if (!overrideColor.HasValue)
+                return;
+
+            if (mat.HasProperty("_Color"))
+                mat.color = overrideColor.Value;
+
+            if (mat.HasProperty("_BaseColor"))
+                mat.SetColor("_BaseColor", overrideColor.Value);
         }
     }
 }
@@ -216,14 +240,14 @@ namespace Boxroom_Plus.Patches
     }
 
     [HarmonyPatch(typeof(ShelfBox), "HandleMetadataReady")]
-    internal static class ShelfBoxCaseColorPatch
+internal static class ShelfBoxCaseColorPatch
+{
+    static void Postfix(ShelfBox __instance, SteamGameData game)
     {
-        static void Postfix(ShelfBox __instance, SteamGameData game)
-        {
-            if (__instance == null || game == null)
-                return;
+        if (__instance == null || game == null)
+            return;
 
-            HelperManager.ApplyCaseColor(__instance.rend, game.AppId);
-        }
+        HelperManager.ApplyCaseColor(__instance.rend, game.AppId);
     }
+}
 }
