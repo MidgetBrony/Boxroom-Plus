@@ -6,8 +6,10 @@ using SteamShelf.Placeables;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using UnityEngine;
+
 
 namespace Boxroom_Plus
 {
@@ -17,36 +19,187 @@ namespace Boxroom_Plus
         public string Platform = "steam";
         public string CaseColor = "";
     }
+    internal static class PlatformIconManager
+    {
+        private static readonly Dictionary<string, Texture2D> Cache =
+            new Dictionary<string, Texture2D>(StringComparer.OrdinalIgnoreCase);
 
+        private static readonly MethodInfo LoadImageMethod;
+
+        static PlatformIconManager()
+        {
+            try
+            {
+                Assembly asm = AppDomain.CurrentDomain
+                    .GetAssemblies()
+                    .FirstOrDefault(a => a.GetName().Name == "UnityEngine.ImageConversionModule");
+
+                if (asm == null)
+                {
+                    MelonLogger.Warning("[Boxroom Plus] ImageConversionModule not loaded.");
+                    return;
+                }
+
+                Type imageConversion = asm.GetType("UnityEngine.ImageConversion");
+
+                if (imageConversion == null)
+                {
+                    MelonLogger.Warning("[Boxroom Plus] UnityEngine.ImageConversion not found.");
+                    return;
+                }
+
+                // Unity usually exposes:
+                // LoadImage(Texture2D, byte[])
+                // or
+                // LoadImage(Texture2D, byte[], bool)
+
+                foreach (MethodInfo method in imageConversion.GetMethods(BindingFlags.Public | BindingFlags.Static))
+                {
+                    if (method.Name != "LoadImage")
+                        continue;
+
+                    ParameterInfo[] p = method.GetParameters();
+
+                    if (p.Length >= 2 &&
+                        p[0].ParameterType == typeof(Texture2D) &&
+                        p[1].ParameterType == typeof(byte[]))
+                    {
+                        LoadImageMethod = method;
+                        break;
+                    }
+                }
+
+                if (LoadImageMethod != null)
+                    MelonLogger.Msg("[Boxroom Plus] ImageConversion.LoadImage hooked via reflection.");
+                else
+                    MelonLogger.Warning("[Boxroom Plus] Failed to locate ImageConversion.LoadImage.");
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Warning(ex.ToString());
+            }
+        }
+
+        public static Texture2D GetPlatformIcon(int appId)
+        {
+            HelperMeta helper = HelperManager.Get(appId);
+
+            string platform = "steam";
+
+            if (helper != null && !string.IsNullOrWhiteSpace(helper.Platform))
+                platform = helper.Platform.ToLowerInvariant();
+
+            Texture2D texture;
+
+            if (Cache.TryGetValue(platform, out texture))
+                return texture;
+
+            texture = LoadEmbedded(platform);
+
+            if (texture == null && platform != "steam")
+                texture = LoadEmbedded("steam");
+
+            if (texture != null)
+                Cache[platform] = texture;
+
+            return texture;
+        }
+
+        private static Texture2D LoadEmbedded(string platform)
+        {
+            Assembly asm = Assembly.GetExecutingAssembly();
+
+            string resource =
+                "BoxroomPlus.Resources.PlatformIcons." +
+                platform +
+                ".png";
+
+            using (Stream stream = asm.GetManifestResourceStream(resource))
+            {
+                if (stream == null)
+                    return null;
+
+                byte[] bytes = new byte[stream.Length];
+                stream.Read(bytes, 0, bytes.Length);
+
+                Texture2D tex = new Texture2D(2, 2);
+
+                if (!LoadTexture(tex, bytes))
+                {
+                    UnityEngine.Object.Destroy(tex);
+                    return null;
+                }
+
+                tex.wrapMode = TextureWrapMode.Clamp;
+                tex.filterMode = FilterMode.Bilinear;
+                tex.Apply(false, true);
+
+                return tex;
+            }
+        }
+
+        private static bool LoadTexture(Texture2D texture, byte[] bytes)
+        {
+            if (LoadImageMethod == null)
+                return false;
+
+            try
+            {
+                ParameterInfo[] p = LoadImageMethod.GetParameters();
+
+                object result;
+
+                if (p.Length == 2)
+                {
+                    result = LoadImageMethod.Invoke(null, new object[]
+                    {
+                    texture,
+                    bytes
+                    });
+                }
+                else
+                {
+                    result = LoadImageMethod.Invoke(null, new object[]
+                    {
+                    texture,
+                    bytes,
+                    false
+                    });
+                }
+
+                return result is bool && (bool)result;
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Warning(ex.ToString());
+                return false;
+            }
+        }
+    }
     internal static class HelperManager
     {
         private const string CacheRootV2 = "steam_cache_v2";
         private const string HelperFile = "meta.helper.json";
-        private static readonly Dictionary<Material, Color> OriginalColors =
-    new Dictionary<Material, Color>();
 
-        private static readonly Dictionary<int, HelperMeta> Helpers =
-            new Dictionary<int, HelperMeta>();
+        private static readonly Dictionary<Material, Color> OriginalColors = new Dictionary<Material, Color>();
+        private static readonly Dictionary<int, HelperMeta> Helpers = new Dictionary<int, HelperMeta>();
 
-        private static readonly Dictionary<string, string> PlatformColors =
-            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        {
-            { "steam", "#2A475E" },
-            { "gog", "#7B2CBF" },
-            { "epic", "#313131" },
-            { "ea", "#FF5A00" },
-            { "ubisoft", "#00AEEF" },
-            { "itch", "#FA5C5C" },
-            { "emulator", "#D4AF37" },
-            { "rom", "#D4AF37" },
-            { "custom", "#D4AF37" }
-        };
+        private static readonly Dictionary<string, string> PlatformColors = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "steam", "#2A475E" },
+                { "gog", "#7B2CBF" },
+                { "epic", "#313131" },
+                { "ea", "#FF5A00" },
+                { "ubisoft", "#00AEEF" },
+                { "itch", "#FA5C5C" },
+                { "emulator", "#D4AF37" },
+                { "rom", "#D4AF37" },
+                { "custom", "#D4AF37" }
+            };
 
         public static HelperMeta Get(int appId)
         {
-            HelperMeta helper;
-
-            if (Helpers.TryGetValue(appId, out helper))
+            if (Helpers.TryGetValue(appId, out var helper))
                 return helper;
 
             helper = Load(appId);
@@ -57,18 +210,25 @@ namespace Boxroom_Plus
             return helper;
         }
 
-        public static void Set(int appId, HelperMeta helper)
+        public static void ApplyAppearance(Renderer renderer, int appId)
         {
-            if (helper == null)
-                return;
+            ApplyCaseColor(renderer, appId);
 
-            Helpers[appId] = helper;
+            // Future:
+             ApplyPlatformIcon(renderer, appId);
         }
 
-        public static void Clear(int appId)
+        private static void ApplyPlatformIcon(Renderer renderer, int appId)
         {
-            if (Helpers.ContainsKey(appId))
-                Helpers.Remove(appId);
+            if (renderer == null)
+                return;
+
+            Texture2D icon = PlatformIconManager.GetPlatformIcon(appId);
+
+            if (icon == null)
+                return;
+
+            MaterialHelpers.SetTexture(renderer, 3, icon);
         }
 
         public static void ApplyCaseColor(Renderer renderer, int appId)
@@ -78,10 +238,9 @@ namespace Boxroom_Plus
                 if (renderer == null)
                     return;
 
-                // Always restore the original BOXROOM material first.
                 ApplyColorToRenderer(renderer);
 
-                HelperMeta helper = Get(appId);
+                var helper = Get(appId);
 
                 if (helper == null)
                     return;
@@ -99,62 +258,35 @@ namespace Boxroom_Plus
                     return;
 
                 if (!ColorUtility.TryParseHtmlString(colorHex, out Color color))
-                {
-                    MelonLogger.Warning($"[Boxroom Plus] Invalid CaseColor '{colorHex}' for AppID {appId}");
                     return;
-                }
 
                 ApplyColorToRenderer(renderer, color);
-
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning($"[Boxroom Plus] ApplyCaseColor failed for AppID {appId}: {ex}");
+                MelonLogger.Warning("[Boxroom Plus] ApplyAppearance failed: " + ex);
             }
         }
 
         private static HelperMeta Load(int appId)
         {
-            string helperPath = GetHelperPath(appId);
-
-            if (string.IsNullOrEmpty(helperPath) || !File.Exists(helperPath))
-                return null;
-
-            try
-            {
-                HelperMeta helper = JsonConvert.DeserializeObject<HelperMeta>(
-                    File.ReadAllText(helperPath));
-
-                return helper;
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Warning("[Boxroom Plus] Failed to read meta.helper.json for AppID " + appId + ": " + ex.Message);
-                return null;
-            }
-        }
-
-        private static string GetHelperPath(int appId)
-        {
-            string root = Path.Combine(
+            string helperPath = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                "AppData",
-                "LocalLow",
-                "NestedLoop",
-                "BOXROOM",
-                CacheRootV2);
+                "AppData", "LocalLow", "NestedLoop", "BOXROOM",
+                CacheRootV2, appId.ToString(), HelperFile);
 
-            return Path.Combine(root, appId.ToString(), HelperFile);
+            if (!File.Exists(helperPath))
+                return null;
+
+            return JsonConvert.DeserializeObject<HelperMeta>(File.ReadAllText(helperPath));
         }
 
         private static void ApplyColorToRenderer(Renderer renderer, Color? overrideColor = null)
         {
             Material mat = renderer.material;
-
             if (mat == null)
                 return;
 
-            // Cache the original BOXROOM color the first time we see this material.
             if (!OriginalColors.ContainsKey(mat))
             {
                 if (mat.HasProperty("_Color"))
@@ -165,7 +297,6 @@ namespace Boxroom_Plus
                     OriginalColors[mat] = Color.white;
             }
 
-            // Always restore the original BOXROOM color first.
             Color original = OriginalColors[mat];
 
             if (mat.HasProperty("_Color"))
@@ -174,7 +305,6 @@ namespace Boxroom_Plus
             if (mat.HasProperty("_BaseColor"))
                 mat.SetColor("_BaseColor", original);
 
-            // No override? We're done.
             if (!overrideColor.HasValue)
                 return;
 
@@ -189,65 +319,49 @@ namespace Boxroom_Plus
 
 namespace Boxroom_Plus.Patches
 {
-    [HarmonyPatch(typeof(Box), nameof(Box.ApplyData))]
-    internal static class BoxInspectCaseColorPatch
+    [HarmonyPatch(typeof(Box), "HandleMetadataReady")]
+    internal static class BoxInspectAppearancePatch
     {
         private static readonly FieldInfo BoxRendererField =
             AccessTools.Field(typeof(Box), "boxRenderer");
 
-        private static void Postfix(Box __instance, SteamGameData game)
+        static void Postfix(Box __instance, SteamGameData game)
         {
-            try
-            {
-                if (__instance == null || game == null || BoxRendererField == null)
-                    return;
+            if (__instance == null || game == null)
+                return;
 
-                Renderer renderer = BoxRendererField.GetValue(__instance) as Renderer;
+            Renderer renderer = BoxRendererField?.GetValue(__instance) as Renderer;
 
-                HelperManager.ApplyCaseColor(renderer, game.AppId);
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Warning("[Boxroom Plus] BoxInspectCaseColorPatch failed: " + ex);
-            }
+            HelperManager.ApplyAppearance(renderer, game.AppId);
         }
     }
 
     [HarmonyPatch(typeof(PlacedBoxProp), "HandleMetadataReady")]
-    internal static class PlacedBoxPropCaseColorPatch
+    internal static class PlacedBoxPropAppearancePatch
     {
         private static readonly FieldInfo RendField =
             AccessTools.Field(typeof(PlacedBoxProp), "rend");
 
-        private static void Postfix(PlacedBoxProp __instance, SteamGameData game)
+        static void Postfix(PlacedBoxProp __instance, SteamGameData game)
         {
+            if (__instance == null || game == null)
+                return;
 
-            MelonLogger.Msg("[PlacedBoxProp] " + game.AppId);
-            try
-            {
-                if (__instance == null || game == null || RendField == null)
-                    return;
+            Renderer renderer = RendField?.GetValue(__instance) as Renderer;
 
-                Renderer renderer = RendField.GetValue(__instance) as Renderer;
-
-                HelperManager.ApplyCaseColor(renderer, game.AppId);
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Warning("[Boxroom Plus] PlacedBoxPropCaseColorPatch failed: " + ex);
-            }
+            HelperManager.ApplyAppearance(renderer, game.AppId);
         }
     }
 
     [HarmonyPatch(typeof(ShelfBox), "HandleMetadataReady")]
-internal static class ShelfBoxCaseColorPatch
-{
-    static void Postfix(ShelfBox __instance, SteamGameData game)
+    internal static class ShelfBoxAppearancePatch
     {
-        if (__instance == null || game == null)
-            return;
+        static void Postfix(ShelfBox __instance, SteamGameData game)
+        {
+            if (__instance == null || game == null)
+                return;
 
-        HelperManager.ApplyCaseColor(__instance.rend, game.AppId);
+            HelperManager.ApplyAppearance(__instance.rend, game.AppId);
+        }
     }
-}
 }

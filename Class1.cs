@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 
 
-[assembly: MelonInfo(typeof(BoxroomPlus.ModMain), "Boxroom Plus", "1.3.0", "MidgetBrony")]
+[assembly: MelonInfo(typeof(BoxroomPlus.ModMain), "Boxroom Plus", "1.4.0-Alpha", "MidgetBrony")]
 [assembly: MelonGame("NestedLoop", "BOXROOM")]
 
 namespace BoxroomPlus
