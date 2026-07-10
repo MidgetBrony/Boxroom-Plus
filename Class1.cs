@@ -26,35 +26,11 @@ namespace BoxroomPlus
         {
             MelonLogger.Msg("Boxroom Plus Loaded!");
 
-            HarmonyInstance.PatchAll();
-
             var type = AccessTools.TypeByName("SteamShelf.SteamGameCache");
 
             MelonLogger.Msg(type?.FullName ?? "NULL");
         }
 
-        static MethodBase TargetMethod()
-        {
-            var type = AccessTools.TypeByName("SteamGameCache");
-
-            if (type == null)
-            {
-                MelonLogger.Error("SteamGameCache type not found!");
-                return null;
-            }
-
-            var method = AccessTools.Method(type, "InvalidateGame");
-
-            if (method == null)
-            {
-                MelonLogger.Error("InvalidateGame method not found!");
-                return null;
-            }
-
-            MelonLogger.Msg("Patching SteamGameCache.InvalidateGame");
-
-            return method;
-        }
     }
 
     public class LaunchData
