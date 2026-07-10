@@ -71,7 +71,9 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Content Include="Resources\PlatformIcons\riot.png" />
+  </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\PlatformIcons\custom.png" />
     <EmbeddedResource Include="Resources\PlatformIcons\ea.png" />
