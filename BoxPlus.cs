@@ -195,8 +195,8 @@ namespace Boxroom_Plus
                 { "emulator", "#D4AF37" },
                 { "riot", "#D13639" },
                 { "rom", "#D4AF37" },
-                { "custom", "#D4AF37" }
-            };
+                { "custom", "#D4AF37" },
+                { "retroarch", "#4B6584" }            };
 
         public static HelperMeta Get(int appId)
         {
