@@ -63,8 +63,6 @@
   <ItemGroup>
     <Compile Include="BoxPlus.cs" />
     <Compile Include="Class1.cs" />
-    <Compile Include="CustomGameCache.cs" />
-    <Compile Include="ForcePatch.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Reflector.cs" />
   </ItemGroup>
@@ -72,8 +70,8 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Resources\PlatformIcons\retroarch.png" />
-    <Content Include="Resources\PlatformIcons\riot.png" />
+    <EmbeddedResource Include="Resources\PlatformIcons\retroarch.png" />
+    <EmbeddedResource Include="Resources\PlatformIcons\riot.png" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\PlatformIcons\custom.png" />
